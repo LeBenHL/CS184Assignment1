@@ -22,9 +22,15 @@
 #include <time.h>
 #include <math.h>
 
+//Ben and Lichen Classes
+#include "color.h"
+#include "sphere.h"
+#include "point_light.h"
+#include "directional_light.h"
 
 #define PI 3.14159265  // Should be used from mathlib
 #define KEY_SPC 32
+#define DEFAULT_COEFFICIENT 0
 inline float sqr(float x) { return x*x; }
 
 using namespace std;
@@ -162,40 +168,66 @@ void myKeyboardFunc(unsigned char key, int x, int y){
 // the usual stuff, nothing exciting here
 //****************************************************
 int main(int argc, char *argv[]) {
+  Color ambient = Color();
+  Color diffuse = Color();
+  Color specular = Color();
+  float coefficient = DEFAULT_COEFFICIENT;
   for(int i = 1; i < argc; i++){
   	if(string(argv[i]) == "-ka"){
   		if(i + 3 < argc){
-
+        ambient.red = atof(argv[i + 1]);
+        ambient.green = atof(argv[i + 2]);
+        ambient.blue = atof(argv[i + 3]);
+        i = i + 3;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-kd"){
   		if(i + 3 < argc){
-
+        diffuse.red = atof(argv[i + 1]);
+        diffuse.green = atof(argv[i + 2]);
+        diffuse.blue = atof(argv[i + 3]);
+        i = i + 3;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-ks"){
   		if(i + 3 < argc){
-
+        specular.red = atof(argv[i + 1]);
+        specular.green = atof(argv[i + 2]);
+        specular.blue = atof(argv[i + 3]);
+        i = i + 3;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-sp"){
   		if(i + 1 < argc){
-
+        DEFAULT_COEFFICIENT = atof(argv[i+1]);
+        i = i + 1;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-ps"){
   		if(i + 6 < argc){
-
+        cerr << argv[i + 1] << endl;
+        cerr << argv[i + 2] << endl;
+        cerr << argv[i + 3] << endl;
+        cerr << argv[i + 4] << endl;
+        cerr << argv[i + 5] << endl;
+        cerr << argv[i + 6] << endl;
+        i = i + 6;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-dl"){
   		if(i + 6 < argc){
-
+        cerr << argv[i + 1] << endl;
+        cerr << argv[i + 2] << endl;
+        cerr << argv[i + 3] << endl;
+        cerr << argv[i + 4] << endl;
+        cerr << argv[i + 5] << endl;
+        cerr << argv[i + 6] << endl;
+        i = i + 6;
   		}else{
 
   		}
@@ -203,6 +235,8 @@ int main(int argc, char *argv[]) {
 
   	}
   }
+
+  Sphere sphere = Sphere(&ambient, &diffuse, &specular, coefficient)
 
   //This initializes glut
   glutInit(&argc, argv);
