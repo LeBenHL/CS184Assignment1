@@ -27,6 +27,7 @@
 #include "sphere.h"
 #include "point_light.h"
 #include "directional_light.h"
+#include "three_d_vector.h"
 
 #define PI 3.14159265  // Should be used from mathlib
 #define KEY_SPC 32
@@ -51,6 +52,9 @@ class Viewport {
 // Global Variables
 //****************************************************
 Viewport	viewport;
+static vector<PointLight> point_lights;
+static vector<DirectionalLight> directional_lights;
+static vector<Sphere> spheres;
 
 //****************************************************
 // Simple init function
@@ -93,7 +97,10 @@ void setPixel(int x, int y, GLfloat r, GLfloat g, GLfloat b) {
 //****************************************************
 
 
-void circle(float centerX, float centerY, float radius) {
+void circle(Sphere* sphere) {
+  float centerX = sphere->x;
+  float centerY = sphere->y;
+  float radius = sphere->radius;
   // Draw inner circle
   glBegin(GL_POINTS);
 
@@ -122,7 +129,6 @@ void circle(float centerX, float centerY, float radius) {
       float dist = sqrt(sqr(x) + sqr(y));
 
       if (dist<=radius) {
-
         // This is the front-facing Z coordinate
         float z = sqrt(radius*radius-dist*dist);
 
@@ -151,7 +157,9 @@ void myDisplay() {
 
 
   // Start drawing
-  circle(viewport.w / 2.0 , viewport.h / 2.0 , min(viewport.w, viewport.h) / 3.0);
+  for(vector<Sphere>::iterator i = spheres.begin(); i != spheres.end(); ++i) {
+    circle(&(*i));
+  }
 
   glFlush();
   glutSwapBuffers();					// swap buffers (we earlier set double buffer)
@@ -172,6 +180,7 @@ int main(int argc, char *argv[]) {
   Color diffuse = Color();
   Color specular = Color();
   float coefficient = DEFAULT_COEFFICIENT;
+
   for(int i = 1; i < argc; i++){
   	if(string(argv[i]) == "-ka"){
   		if(i + 3 < argc){
@@ -202,32 +211,37 @@ int main(int argc, char *argv[]) {
   		}
   	}else if(string(argv[i]) == "-sp"){
   		if(i + 1 < argc){
-        DEFAULT_COEFFICIENT = atof(argv[i+1]);
+        coefficient = atof(argv[i+1]);
         i = i + 1;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-ps"){
   		if(i + 6 < argc){
-        cerr << argv[i + 1] << endl;
-        cerr << argv[i + 2] << endl;
-        cerr << argv[i + 3] << endl;
-        cerr << argv[i + 4] << endl;
-        cerr << argv[i + 5] << endl;
-        cerr << argv[i + 6] << endl;
+        float x, y, z, r, g, b;
+        x = atof(argv[i + 1]);
+        y = atof(argv[i + 2]);
+        z = atof(argv[i + 3]);
+        r = atof(argv[i + 4]);
+        g = atof(argv[i + 5]);
+        b = atof(argv[i + 6]);
+        point_lights.push_back(PointLight(x, y, z, r, g, b));
         i = i + 6;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-dl"){
   		if(i + 6 < argc){
-        cerr << argv[i + 1] << endl;
-        cerr << argv[i + 2] << endl;
-        cerr << argv[i + 3] << endl;
-        cerr << argv[i + 4] << endl;
-        cerr << argv[i + 5] << endl;
-        cerr << argv[i + 6] << endl;
+        float x, y, z, r, g, b;
+        x = atof(argv[i + 1]);
+        y = atof(argv[i + 2]);
+        z = atof(argv[i + 3]);
+        r = atof(argv[i + 4]);
+        g = atof(argv[i + 5]);
+        b = atof(argv[i + 6]);
+        directional_lights.push_back(DirectionalLight(x, y, z, r, g, b));
         i = i + 6;
+
   		}else{
 
   		}
@@ -236,17 +250,17 @@ int main(int argc, char *argv[]) {
   	}
   }
 
-  Sphere sphere = Sphere(&ambient, &diffuse, &specular, coefficient)
+  // Initalize theviewport size
+  viewport.w = 400;
+  viewport.h = 400;
+
+  spheres.push_back(Sphere(&ambient, &diffuse, &specular, coefficient, min(viewport.w, viewport.h) / 3.0, viewport.w / 2.0, viewport.h / 2.0));
 
   //This initializes glut
   glutInit(&argc, argv);
 
   //This tells glut to use a double-buffered window with red, green, and blue channels 
   glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB);
-
-  // Initalize theviewport size
-  viewport.w = 400;
-  viewport.h = 400;
 
   //The size and position of the window
   glutInitWindowSize(viewport.w, viewport.h);

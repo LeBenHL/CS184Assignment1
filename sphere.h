@@ -1,3 +1,5 @@
+#ifndef SPHERE_H
+#define SPHERE_H
 #include "color.h"
 
 class Sphere {
@@ -6,5 +8,8 @@ class Sphere {
      Color* diffuse_color;
      Color* specular_color;
      float power_coefficient;
-     Sphere(Color*, Color*, Color*, float);
+     float x, y, z, radius;
+     Sphere(Color*, Color*, Color*, float, float, float=0, float=0, float=0);
 };
+
+#endif
