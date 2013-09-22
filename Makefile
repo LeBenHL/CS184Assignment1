@@ -20,7 +20,7 @@ sphere.o: sphere.h sphere.cpp three_d_vector.h
 	$(CC) $(CFLAGS) -c sphere.cpp -o sphere.o
 point_light.o: point_light.h point_light.cpp light.h
 	$(CC) $(CFLAGS) -c point_light.cpp -o point_light.o
-directional_light.o: directional_light.h directional_light.cpp light.h
+directional_light.o: directional_light.h directional_light.cpp light.h three_d_vector.h
 	$(CC) $(CFLAGS) -c directional_light.cpp -o directional_light.o
 three_d_vector.o: three_d_vector.h three_d_vector.cpp
 	$(CC) $(CFLAGS) -c three_d_vector.cpp -o three_d_vector.o

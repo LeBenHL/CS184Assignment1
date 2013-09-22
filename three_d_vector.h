@@ -10,9 +10,11 @@ class ThreeDVector{
 		float magnitude();
 		void normalize();
 		float dot_product(ThreeDVector*);
-		ThreeDVector* scalar_multiply(float k);
+		void scalar_multiply(float k);
 		void vector_add(ThreeDVector*);
+		ThreeDVector* vector_subtract(ThreeDVector*);
 		ThreeDVector* vector_multiply(ThreeDVector*);
+		ThreeDVector* clone();
 };
 
 #endif

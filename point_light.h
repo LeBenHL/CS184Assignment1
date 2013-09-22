@@ -4,6 +4,7 @@
 
 class PointLight: public Light {
   public:
+  	float x, y, z;
   	PointLight(float, float, float, float, float, float);
 };
 

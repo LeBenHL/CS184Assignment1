@@ -51,9 +51,9 @@ class Viewport {
 // Global Variables
 //****************************************************
 Viewport	viewport;
-static vector<PointLight> point_lights;
-static vector<DirectionalLight> directional_lights;
-static vector<Sphere> spheres;
+static vector<PointLight*> point_lights;
+static vector<DirectionalLight*> directional_lights;
+static vector<Sphere*> spheres;
 
 //****************************************************
 // Simple init function
@@ -91,6 +91,36 @@ void setPixel(int x, int y, GLfloat r, GLfloat g, GLfloat b) {
   // bug on inst machines.
 }
 
+ThreeDVector* calculateDiffuse(Light* l, ThreeDVector* direction, ThreeDVector* diffuse, ThreeDVector* normal){
+  //cout << "Light: " << l->red << ", " << l->green << ", " << l->blue << endl;
+  //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+  //cout << "Diffuse: " << diffuse->x << ", " << diffuse->y << ", " << diffuse->z << endl;
+  //cout << "Normal: " << normal->x << ", " << normal->y << ", " << normal->z << endl;
+  float dot_product = direction->dot_product(normal);
+  //cout << "DOT PRODUCT: " << dot_product << endl;
+  ThreeDVector light = ThreeDVector(l->red, l->green, l->blue);
+  //cout << "Light1: " << light.x << ", " << light.y << ", " << light.z << endl;
+  light.scalar_multiply(max(dot_product, float(0)));
+  //cout << "Light1: " << light.x << ", " << light.y << ", " << light.z << endl;
+  //cout << endl;
+  return diffuse->vector_multiply(&light);
+}
+
+ThreeDVector* calculateSpecular(Light* l, ThreeDVector* reflect, ThreeDVector* specular, ThreeDVector* view, float power_coefficient){
+  //cout << "Light: " << l->red << ", " << l->green << ", " << l->blue << endl;
+  //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+  //cout << "Diffuse: " << diffuse->x << ", " << diffuse->y << ", " << diffuse->z << endl;
+  //cout << "Normal: " << normal->x << ", " << normal->y << ", " << normal->z << endl;
+  float dot_product = view->dot_product(reflect);
+  //cout << "DOT PRODUCT: " << dot_product << endl;
+  ThreeDVector light = ThreeDVector(l->red, l->green, l->blue);
+  //cout << "Light1: " << light.x << ", " << light.y << ", " << light.z << endl;
+  light.scalar_multiply(pow(max(dot_product, float(0)), power_coefficient));
+  //cout << "Light1: " << light.x << ", " << light.y << ", " << light.z << endl;
+  //cout << endl;
+  return specular->vector_multiply(&light);
+}
+
 //****************************************************
 // Draw a filled circle.  
 //****************************************************
@@ -116,6 +146,11 @@ void circle(Sphere* sphere) {
   int minJ = max(0,(int)floor(centerY-radius));
   int maxJ = min(viewport.h-1,(int)ceil(centerY+radius));
 
+    //Ambient Color
+  ThreeDVector ambient_light = ThreeDVector(1, 1, 1);
+  ThreeDVector* ambient_coefficient = sphere->ambient_coefficient;
+  ThreeDVector* ambient_component = ambient_coefficient->vector_multiply(&ambient_light); //NEW OBJECT
+  ThreeDVector* view_vector = new ThreeDVector(0, 0, 1);
 
 
   for (i=0;i<viewport.w;i++) {
@@ -127,18 +162,81 @@ void circle(Sphere* sphere) {
 
       float dist = sqrt(sqr(x) + sqr(y));
 
-      ThreeDVector pixel_color = ThreeDVector();
-
-      //Ambient Color
-      ThreeDVector ambient_light = ThreeDVector(1, 1, 1);
-      ThreeDVector* ambient_coefficient = sphere->ambient_coefficient;
-      ThreeDVector* ambient_component = ambient_coefficient->vector_multiply(&ambient_light); //NEW OBJECT
-
-      pixel_color.vector_add(ambient_component);
-
       if (dist<=radius) {
         // This is the front-facing Z coordinate
         float z = sqrt(radius*radius-dist*dist);
+
+        //cout << x << ", " << y << ", " << z << endl;
+        ThreeDVector currentPoint = ThreeDVector(x, y, z);
+        ThreeDVector center = ThreeDVector(0, 0, 0);
+        ThreeDVector* normal = currentPoint.vector_subtract(&center);
+        normal->normalize();
+
+        ThreeDVector pixel_color = ThreeDVector();
+
+        pixel_color.vector_add(ambient_component);
+
+        //Directional Lights
+        for (vector<DirectionalLight*>::iterator i = directional_lights.begin(); i != directional_lights.end(); ++i) {
+          ThreeDVector* direction = (*i)->direction;
+          //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+          ThreeDVector* diffuse_component = calculateDiffuse(*i, direction, sphere->diffuse_coefficient, normal); //returns NEW OBJ
+          //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
+          pixel_color.vector_add(diffuse_component);
+          //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
+
+          ThreeDVector* direction_clone = direction->clone(); //new obj!
+          direction_clone->scalar_multiply(-1);
+          ThreeDVector* normal_clone = normal->clone(); //new obj!
+          normal_clone->scalar_multiply(2*direction->dot_product(normal));
+          direction_clone->vector_add(normal_clone);
+
+          //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+          ThreeDVector* specular_component = calculateSpecular(*i, direction_clone, sphere->specular_coefficient, view_vector, sphere->power_coefficient); //returns NEW OBJ
+          //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
+          pixel_color.vector_add(specular_component);
+          //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
+
+          delete diffuse_component;
+          delete direction_clone;
+          delete normal_clone;
+          delete specular_component;
+
+        }
+
+        cout << endl;
+
+        //Point Lights
+        for (vector<PointLight*>::iterator i = point_lights.begin(); i != point_lights.end(); ++i) {
+          ThreeDVector pointLightPosition = ThreeDVector((*i)->x, (*i)->y, (*i)->z);
+          //cout << "DIRECTION1: " << pointLightPosition.x << ", " << pointLightPosition.y << ", " << pointLightPosition.z << endl;
+          pointLightPosition.scalar_multiply(radius);
+          //cout << "DIRECTION2: " << pointLightPosition.x << ", " << pointLightPosition.y << ", " << pointLightPosition.z << endl;
+          ThreeDVector* direction = pointLightPosition.vector_subtract(&currentPoint); // new OBJ
+          //cout << "DIRECTION3: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+          direction->normalize();
+          ThreeDVector* diffuse_component = calculateDiffuse(*i, direction, sphere->diffuse_coefficient, normal); //returns NEW OBJ
+          pixel_color.vector_add(diffuse_component);
+
+          ThreeDVector* direction_clone = direction->clone(); //new obj!
+          direction_clone->scalar_multiply(-1);
+          ThreeDVector* normal_clone = normal->clone(); //new obj!
+          normal_clone->scalar_multiply(2*direction->dot_product(normal));
+          direction_clone->vector_add(normal_clone);
+
+          //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+          ThreeDVector* specular_component = calculateSpecular(*i, direction_clone, sphere->specular_coefficient, view_vector, sphere->power_coefficient); //returns NEW OBJ
+          //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
+          pixel_color.vector_add(specular_component);
+          //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
+          
+          delete direction_clone;
+          delete normal_clone;
+          delete specular_component;
+
+          delete direction;
+          delete diffuse_component;
+        }
 
         setPixel(i,j, pixel_color.x, pixel_color.y, pixel_color.z);
 
@@ -149,7 +247,8 @@ void circle(Sphere* sphere) {
 
     }
   }
-
+  delete ambient_component;
+  delete view_vector;
 
   glEnd();
 }
@@ -165,8 +264,8 @@ void myDisplay() {
 
 
   // Start drawing
-  for(vector<Sphere>::iterator i = spheres.begin(); i != spheres.end(); ++i) {
-    circle(&(*i));
+  for(vector<Sphere*>::iterator i = spheres.begin(); i != spheres.end(); ++i) {
+    circle(*i);
   }
 
   glFlush();
@@ -224,7 +323,7 @@ int main(int argc, char *argv[]) {
   		}else{
 
   		}
-  	}else if(string(argv[i]) == "-ps"){
+  	}else if(string(argv[i]) == "-pl"){
   		if(i + 6 < argc){
         float x, y, z, r, g, b;
         x = atof(argv[i + 1]);
@@ -233,7 +332,8 @@ int main(int argc, char *argv[]) {
         r = atof(argv[i + 4]);
         g = atof(argv[i + 5]);
         b = atof(argv[i + 6]);
-        point_lights.push_back(PointLight(x, y, z, r, g, b));
+        PointLight* light = new PointLight(x, y, z, r, g, b);
+        point_lights.push_back(light);
         i = i + 6;
   		}else{
 
@@ -247,7 +347,8 @@ int main(int argc, char *argv[]) {
         r = atof(argv[i + 4]);
         g = atof(argv[i + 5]);
         b = atof(argv[i + 6]);
-        directional_lights.push_back(DirectionalLight(x, y, z, r, g, b));
+        DirectionalLight* light = new DirectionalLight(x, y, z, r, g, b);
+        directional_lights.push_back(light);
         i = i + 6;
 
   		}else{
@@ -262,7 +363,8 @@ int main(int argc, char *argv[]) {
   viewport.w = 400;
   viewport.h = 400;
 
-  spheres.push_back(Sphere(&ambient_coefficient, &diffuse_coefficient, &specular_coefficient, coefficient, min(viewport.w, viewport.h) / 3.0, viewport.w / 2.0, viewport.h / 2.0));
+  Sphere* sphere = new Sphere(&ambient_coefficient, &diffuse_coefficient, &specular_coefficient, coefficient, min(viewport.w, viewport.h) / 3.0, viewport.w / 2.0, viewport.h / 2.0);
+  spheres.push_back(sphere);
 
   //This initializes glut
   glutInit(&argc, argv);
