@@ -1,9 +1,9 @@
 #ifndef COLOR_H
 #define COLOR_H
+#include "three_d_vector.h"
 
-class Color {
+class Color: public ThreeDVector {
   public:
-    float red, green, blue; // width and height
     Color(float=0, float=0, float=0);
 };
 

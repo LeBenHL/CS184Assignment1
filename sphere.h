@@ -1,15 +1,15 @@
 #ifndef SPHERE_H
 #define SPHERE_H
-#include "color.h"
+#include "three_d_vector.h"
 
 class Sphere {
   public:
-     Color* ambient_color;
-     Color* diffuse_color;
-     Color* specular_color;
+     ThreeDVector* ambient_coefficient;
+     ThreeDVector* diffuse_coefficient;
+     ThreeDVector* specular_coefficient;
      float power_coefficient;
      float x, y, z, radius;
-     Sphere(Color*, Color*, Color*, float, float, float=0, float=0, float=0);
+     Sphere(ThreeDVector*, ThreeDVector*, ThreeDVector*, float, float, float=0, float=0, float=0);
 };
 
 #endif

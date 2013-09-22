@@ -23,7 +23,6 @@
 #include <math.h>
 
 //Ben and Lichen Classes
-#include "color.h"
 #include "sphere.h"
 #include "point_light.h"
 #include "directional_light.h"
@@ -128,11 +127,20 @@ void circle(Sphere* sphere) {
 
       float dist = sqrt(sqr(x) + sqr(y));
 
+      ThreeDVector pixel_color = ThreeDVector();
+
+      //Ambient Color
+      ThreeDVector ambient_light = ThreeDVector(1, 1, 1);
+      ThreeDVector* ambient_coefficient = sphere->ambient_coefficient;
+      ThreeDVector* ambient_component = ambient_coefficient->vector_multiply(&ambient_light); //NEW OBJECT
+
+      pixel_color.vector_add(ambient_component);
+
       if (dist<=radius) {
         // This is the front-facing Z coordinate
         float z = sqrt(radius*radius-dist*dist);
 
-        setPixel(i,j, 1.0, 0.0, 0.0);
+        setPixel(i,j, pixel_color.x, pixel_color.y, pixel_color.z);
 
         // This is amusing, but it assumes negative color values are treated reasonably.
         // setPixel(i,j, x/radius, y/radius, z/radius );
@@ -176,35 +184,35 @@ void myKeyboardFunc(unsigned char key, int x, int y){
 // the usual stuff, nothing exciting here
 //****************************************************
 int main(int argc, char *argv[]) {
-  Color ambient = Color();
-  Color diffuse = Color();
-  Color specular = Color();
+  ThreeDVector ambient_coefficient = ThreeDVector();
+  ThreeDVector diffuse_coefficient = ThreeDVector();
+  ThreeDVector specular_coefficient = ThreeDVector();
   float coefficient = DEFAULT_COEFFICIENT;
 
   for(int i = 1; i < argc; i++){
   	if(string(argv[i]) == "-ka"){
   		if(i + 3 < argc){
-        ambient.red = atof(argv[i + 1]);
-        ambient.green = atof(argv[i + 2]);
-        ambient.blue = atof(argv[i + 3]);
+        ambient_coefficient.x = atof(argv[i + 1]);
+        ambient_coefficient.y = atof(argv[i + 2]);
+        ambient_coefficient.z = atof(argv[i + 3]);
         i = i + 3;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-kd"){
   		if(i + 3 < argc){
-        diffuse.red = atof(argv[i + 1]);
-        diffuse.green = atof(argv[i + 2]);
-        diffuse.blue = atof(argv[i + 3]);
+        diffuse_coefficient.x = atof(argv[i + 1]);
+        diffuse_coefficient.y = atof(argv[i + 2]);
+        diffuse_coefficient.z = atof(argv[i + 3]);
         i = i + 3;
   		}else{
 
   		}
   	}else if(string(argv[i]) == "-ks"){
   		if(i + 3 < argc){
-        specular.red = atof(argv[i + 1]);
-        specular.green = atof(argv[i + 2]);
-        specular.blue = atof(argv[i + 3]);
+        specular_coefficient.x = atof(argv[i + 1]);
+        specular_coefficient.y = atof(argv[i + 2]);
+        specular_coefficient.z = atof(argv[i + 3]);
         i = i + 3;
   		}else{
 
@@ -254,7 +262,7 @@ int main(int argc, char *argv[]) {
   viewport.w = 400;
   viewport.h = 400;
 
-  spheres.push_back(Sphere(&ambient, &diffuse, &specular, coefficient, min(viewport.w, viewport.h) / 3.0, viewport.w / 2.0, viewport.h / 2.0));
+  spheres.push_back(Sphere(&ambient_coefficient, &diffuse_coefficient, &specular_coefficient, coefficient, min(viewport.w, viewport.h) / 3.0, viewport.w / 2.0, viewport.h / 2.0));
 
   //This initializes glut
   glutInit(&argc, argv);

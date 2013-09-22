@@ -29,3 +29,13 @@ float ThreeDVector::dot_product(ThreeDVector* v){
 ThreeDVector* ThreeDVector::scalar_multiply(float k){
 	return new ThreeDVector(k*this->x, k*this->y, k*this->z);
 }
+
+void ThreeDVector::vector_add(ThreeDVector* v){
+	this->x += v->x;
+	this->y += v->y;
+	this->z += v->z;
+}
+
+ThreeDVector* ThreeDVector::vector_multiply(ThreeDVector* v){
+	return new ThreeDVector(v->x * this->x, v->y * this->y, v->z * this->z);
+}

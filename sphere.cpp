@@ -1,9 +1,9 @@
 #include "sphere.h"
 
-Sphere::Sphere(Color* amibient, Color* diffuse, Color* specular, float coefficient, float r, float _x, float _y, float _z) {
-	ambient_color = amibient;
-	diffuse_color = diffuse;
-	specular_color = specular;
+Sphere::Sphere(ThreeDVector* ambient, ThreeDVector* diffuse, ThreeDVector* specular, float coefficient, float r, float _x, float _y, float _z) {
+	ambient_coefficient = ambient;
+	diffuse_coefficient = diffuse;
+	specular_coefficient = specular;
 	power_coefficient = coefficient;
 	x = _x;
 	y = _y;

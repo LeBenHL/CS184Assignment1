@@ -9,7 +9,7 @@ Color::Color(float r, float g, float b) {
 		cerr << "Color Values Out Of Range." << endl;
 		exit(1);
 	}
-	red = r;
-	green = g;
-	blue = b;
+	x = r;
+	y = g;
+	z = b;
 }

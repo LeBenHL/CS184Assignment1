@@ -1,4 +1,4 @@
-OBJS = example_01.o color.o sphere.o point_light.o directional_light.o three_d_vector.o
+OBJS = example_01.o sphere.o point_light.o directional_light.o three_d_vector.o
 CC = g++
 ifeq ($(shell sw_vers 2>/dev/null | grep Mac | awk '{ print $$2}'),Mac)
 	CFLAGS = -g -DGL_GLEXT_PROTOTYPES -I./include/ -I/usr/X11/include -DOSX
@@ -14,11 +14,9 @@ RM = /bin/rm -f
 all: main 
 main: $(OBJS)
 	$(CC) $(CFLAGS) -o as1 $(OBJS) $(LDFLAGS) 
-example_01.o: example_01.cpp color.h sphere.h point_light.h directional_light.h three_d_vector.h
+example_01.o: example_01.cpp sphere.h point_light.h directional_light.h three_d_vector.h
 	$(CC) $(CFLAGS) -c example_01.cpp -o example_01.o
-color.o: color.h color.cpp
-	$(CC) $(CFLAGS) -c color.cpp -o color.o
-sphere.o: sphere.h sphere.cpp color.h
+sphere.o: sphere.h sphere.cpp three_d_vector.h
 	$(CC) $(CFLAGS) -c sphere.cpp -o sphere.o
 point_light.o: point_light.h point_light.cpp light.h
 	$(CC) $(CFLAGS) -c point_light.cpp -o point_light.o

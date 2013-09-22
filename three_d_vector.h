@@ -6,12 +6,13 @@ class ThreeDVector{
 		float x;
 		float y;
 		float z;
-		ThreeDVector(float, float, float);
+		ThreeDVector(float=0, float=0, float=0);
 		float magnitude();
 		void normalize();
 		float dot_product(ThreeDVector*);
-		ThreeDVector* cross_product(ThreeDVector*);
 		ThreeDVector* scalar_multiply(float k);
+		void vector_add(ThreeDVector*);
+		ThreeDVector* vector_multiply(ThreeDVector*);
 };
 
 #endif
