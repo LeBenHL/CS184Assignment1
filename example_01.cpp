@@ -127,9 +127,9 @@ ThreeDVector* calculateSpecular(Light* l, ThreeDVector* reflect, ThreeDVector* s
 
 
 void circle(Sphere* sphere) {
-  float centerX = sphere->x;
-  float centerY = sphere->y;
-  float radius = sphere->radius;
+  float centerX = viewport.w / 2.0;
+  float centerY = viewport.h / 2.0;
+  float radius = min(viewport.w, viewport.h) / 3.0;
   // Draw inner circle
   glBegin(GL_POINTS);
 
