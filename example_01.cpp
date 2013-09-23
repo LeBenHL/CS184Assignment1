@@ -204,7 +204,7 @@ void circle(Sphere* sphere) {
 
         }
 
-        cout << endl;
+        //cout << endl;
 
         //Point Lights
         for (vector<PointLight*>::iterator i = point_lights.begin(); i != point_lights.end(); ++i) {
