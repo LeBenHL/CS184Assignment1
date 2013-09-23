@@ -1,8 +1,8 @@
-OBJS = example_01.o sphere.o point_light.o directional_light.o three_d_vector.o
+OBJS = example_01.o sphere.o point_light.o directional_light.o three_d_vector.o libSOIL.a
 CC = g++
 ifeq ($(shell sw_vers 2>/dev/null | grep Mac | awk '{ print $$2}'),Mac)
 	CFLAGS = -g -DGL_GLEXT_PROTOTYPES -I./include/ -I/usr/X11/include -DOSX
-	LDFLAGS = -framework GLUT -framework OpenGL \
+	LDFLAGS = -framework GLUT -framework OpenGL -framework CoreFoundation\
     	-L"/System/Library/Frameworks/OpenGL.framework/Libraries" \
     	-lGL -lGLU -lm -lstdc++
 else

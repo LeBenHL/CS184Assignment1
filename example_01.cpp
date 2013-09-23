@@ -28,6 +28,9 @@
 #include "directional_light.h"
 #include "three_d_vector.h"
 
+//SOIL
+#include "SOIL.h"
+
 #define PI 3.14159265  // Should be used from mathlib
 #define KEY_SPC 32
 #define DEFAULT_COEFFICIENT 0
@@ -62,6 +65,9 @@ static ThreeDVector* cw_direction;
 
 static bool cw_shade = false;
 static bool toon_shade = false;
+
+static bool save = false;
+static const char* file_name;
 
 //****************************************************
 // Simple init function
@@ -156,6 +162,7 @@ void circle(Sphere* sphere) {
   float radius = min(viewport.w, viewport.h) / 3.0;
   // Draw inner circle
   glBegin(GL_POINTS);
+
 
   // We could eliminate wasted work by only looping over the pixels
   // inside the sphere's radius.  But the example is more clear this
@@ -286,7 +293,6 @@ void circle(Sphere* sphere) {
   }
   delete ambient_component;
   delete view_vector;
-
   glEnd();
 }
 //****************************************************
@@ -299,11 +305,33 @@ void myDisplay() {
   glMatrixMode(GL_MODELVIEW);			        // indicate we are specifying camera transformations
   glLoadIdentity();				        // make sure transformation is "zero'd"
 
-
   // Start drawing
   for(vector<Sphere*>::iterator i = spheres.begin(); i != spheres.end(); ++i) {
     circle(*i);
   }
+
+  if (save) {
+        int w = glutGet(GLUT_WINDOW_WIDTH);
+        int h = glutGet(GLUT_WINDOW_HEIGHT);
+        int row_stride = w * 3;
+        vector<unsigned char> buf(w * h * 3);
+
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
+        glReadPixels(0, 0, w, h, GL_RGB, GL_UNSIGNED_BYTE, &buf[0] );
+
+        vector<unsigned char> new_buf(0);
+        for (int i = h -1 ; i >= 0; --i) {
+          int begin = i * row_stride;
+          int end = begin + row_stride;
+          for(int j = begin; j != end; ++j) {
+            new_buf.push_back(buf[j]);
+          }
+        }
+
+        SOIL_save_image(file_name, SOIL_SAVE_TYPE_BMP, w, h, 3, &new_buf[0]);
+
+        exit(0);
+    }
 
   glFlush();
   glutSwapBuffers();					// swap buffers (we earlier set double buffer)
@@ -413,6 +441,12 @@ int main(int argc, char *argv[]) {
         }
   	} else if (string(argv[i]) == "-tn") {
       toon_shade = true;
+    } else if (string(argv[i]) == "-save") {
+      if(i + 1 < argc){
+        save = true;
+        file_name = argv[i + 1];
+        i = i + 1;
+      }
     }
   }
 
