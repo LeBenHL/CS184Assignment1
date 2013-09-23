@@ -55,6 +55,14 @@ static vector<PointLight*> point_lights;
 static vector<DirectionalLight*> directional_lights;
 static vector<Sphere*> spheres;
 
+static ThreeDVector* cool_color;
+static ThreeDVector* warm_color;
+static ThreeDVector* cw_direction;
+
+
+static bool cw_shade = false;
+static bool toon_shade = false;
+
 //****************************************************
 // Simple init function
 //****************************************************
@@ -121,6 +129,22 @@ ThreeDVector* calculateSpecular(Light* l, ThreeDVector* reflect, ThreeDVector* s
   return specular->vector_multiply(&light);
 }
 
+float toonify(float color_intensity) {
+  if (color_intensity >= 0 and color_intensity < .125) {
+    return .0625;
+  } else if (color_intensity >= .125 and color_intensity < .375) {
+    return 0.25;
+  } else if (color_intensity >= .375 and color_intensity < .625) {
+    return 0.5;
+  } else if (color_intensity >= .625 and color_intensity < .875) {
+    return 0.75;
+  } else if (color_intensity >= .875 and color_intensity <= 1) {
+    return .9375;
+  } else {
+    return color_intensity;
+  }
+}
+
 //****************************************************
 // Draw a filled circle.  
 //****************************************************
@@ -174,71 +198,84 @@ void circle(Sphere* sphere) {
 
         ThreeDVector pixel_color = ThreeDVector();
 
-        pixel_color.vector_add(ambient_component);
+        if (cw_shade) {
+          float warmth_constant = (1 + normal->dot_product(cw_direction))/2;
+          pixel_color.x = warmth_constant*(warm_color->x) + (1-warmth_constant)*(cool_color->x);
+          pixel_color.y = warmth_constant*(warm_color->y) + (1-warmth_constant)*(cool_color->y);
+          pixel_color.z = warmth_constant*(warm_color->z) + (1-warmth_constant)*(cool_color->z);
 
-        //Directional Lights
-        for (vector<DirectionalLight*>::iterator i = directional_lights.begin(); i != directional_lights.end(); ++i) {
-          ThreeDVector* direction = (*i)->direction;
-          //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
-          ThreeDVector* diffuse_component = calculateDiffuse(*i, direction, sphere->diffuse_coefficient, normal); //returns NEW OBJ
-          //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
-          pixel_color.vector_add(diffuse_component);
-          //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
+        } else {
+          pixel_color.vector_add(ambient_component);
 
-          ThreeDVector* direction_clone = direction->clone(); //new obj!
-          direction_clone->scalar_multiply(-1);
-          ThreeDVector* normal_clone = normal->clone(); //new obj!
-          normal_clone->scalar_multiply(2*direction->dot_product(normal));
-          direction_clone->vector_add(normal_clone);
+          //Directional Lights
+          for (vector<DirectionalLight*>::iterator i = directional_lights.begin(); i != directional_lights.end(); ++i) {
+            ThreeDVector* direction = (*i)->direction;
+            //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+            ThreeDVector* diffuse_component = calculateDiffuse(*i, direction, sphere->diffuse_coefficient, normal); //returns NEW OBJ
+            //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
+            pixel_color.vector_add(diffuse_component);
+            //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
 
-          //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
-          ThreeDVector* specular_component = calculateSpecular(*i, direction_clone, sphere->specular_coefficient, view_vector, sphere->power_coefficient); //returns NEW OBJ
-          //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
-          pixel_color.vector_add(specular_component);
-          //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
+            ThreeDVector* direction_clone = direction->clone(); //new obj!
+            direction_clone->scalar_multiply(-1);
+            ThreeDVector* normal_clone = normal->clone(); //new obj!
+            normal_clone->scalar_multiply(2*direction->dot_product(normal));
+            direction_clone->vector_add(normal_clone);
 
-          delete diffuse_component;
-          delete direction_clone;
-          delete normal_clone;
-          delete specular_component;
+            //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+            ThreeDVector* specular_component = calculateSpecular(*i, direction_clone, sphere->specular_coefficient, view_vector, sphere->power_coefficient); //returns NEW OBJ
+            //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
+            pixel_color.vector_add(specular_component);
+            //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
+
+            delete diffuse_component;
+            delete direction_clone;
+            delete normal_clone;
+            delete specular_component;
+
+          }
+
+          //cout << endl;
+
+          //Point Lights
+          for (vector<PointLight*>::iterator i = point_lights.begin(); i != point_lights.end(); ++i) {
+            ThreeDVector pointLightPosition = ThreeDVector((*i)->x, (*i)->y, (*i)->z);
+            //cout << "DIRECTION1: " << pointLightPosition.x << ", " << pointLightPosition.y << ", " << pointLightPosition.z << endl;
+            pointLightPosition.scalar_multiply(radius);
+            //cout << "DIRECTION2: " << pointLightPosition.x << ", " << pointLightPosition.y << ", " << pointLightPosition.z << endl;
+            ThreeDVector* direction = pointLightPosition.vector_subtract(&currentPoint); // new OBJ
+            //cout << "DIRECTION3: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+            direction->normalize();
+            ThreeDVector* diffuse_component = calculateDiffuse(*i, direction, sphere->diffuse_coefficient, normal); //returns NEW OBJ
+            pixel_color.vector_add(diffuse_component);
+
+            ThreeDVector* direction_clone = direction->clone(); //new obj!
+            direction_clone->scalar_multiply(-1);
+            ThreeDVector* normal_clone = normal->clone(); //new obj!
+            normal_clone->scalar_multiply(2*direction->dot_product(normal));
+            direction_clone->vector_add(normal_clone);
+
+            //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
+            ThreeDVector* specular_component = calculateSpecular(*i, direction_clone, sphere->specular_coefficient, view_vector, sphere->power_coefficient); //returns NEW OBJ
+            //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
+            pixel_color.vector_add(specular_component);
+            //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
+            
+            delete direction_clone;
+            delete normal_clone;
+            delete specular_component;
+
+            delete direction;
+            delete diffuse_component;
+          }
 
         }
 
-        //cout << endl;
-
-        //Point Lights
-        for (vector<PointLight*>::iterator i = point_lights.begin(); i != point_lights.end(); ++i) {
-          ThreeDVector pointLightPosition = ThreeDVector((*i)->x, (*i)->y, (*i)->z);
-          //cout << "DIRECTION1: " << pointLightPosition.x << ", " << pointLightPosition.y << ", " << pointLightPosition.z << endl;
-          pointLightPosition.scalar_multiply(radius);
-          //cout << "DIRECTION2: " << pointLightPosition.x << ", " << pointLightPosition.y << ", " << pointLightPosition.z << endl;
-          ThreeDVector* direction = pointLightPosition.vector_subtract(&currentPoint); // new OBJ
-          //cout << "DIRECTION3: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
-          direction->normalize();
-          ThreeDVector* diffuse_component = calculateDiffuse(*i, direction, sphere->diffuse_coefficient, normal); //returns NEW OBJ
-          pixel_color.vector_add(diffuse_component);
-
-          ThreeDVector* direction_clone = direction->clone(); //new obj!
-          direction_clone->scalar_multiply(-1);
-          ThreeDVector* normal_clone = normal->clone(); //new obj!
-          normal_clone->scalar_multiply(2*direction->dot_product(normal));
-          direction_clone->vector_add(normal_clone);
-
-          //cout << "Direction: " << direction->x << ", " << direction->y << ", " << direction->z << endl;
-          ThreeDVector* specular_component = calculateSpecular(*i, direction_clone, sphere->specular_coefficient, view_vector, sphere->power_coefficient); //returns NEW OBJ
-          //cout << diffuse_component->x << ", " << diffuse_component->y << ", " << diffuse_component->z << endl;
-          pixel_color.vector_add(specular_component);
-          //cout << pixel_color.x << ", " << pixel_color.y << ", " << pixel_color.z << endl;
-          
-          delete direction_clone;
-          delete normal_clone;
-          delete specular_component;
-
-          delete direction;
-          delete diffuse_component;
+        if (toon_shade) {
+          setPixel(i,j, toonify(pixel_color.x), toonify(pixel_color.y), toonify(pixel_color.z));
+        } else {
+          setPixel(i,j, pixel_color.x, pixel_color.y, pixel_color.z);
         }
-
-        setPixel(i,j, pixel_color.x, pixel_color.y, pixel_color.z);
 
         // This is amusing, but it assumes negative color values are treated reasonably.
         // setPixel(i,j, x/radius, y/radius, z/radius );
@@ -351,12 +388,32 @@ int main(int argc, char *argv[]) {
         directional_lights.push_back(light);
         i = i + 6;
 
-  		}else{
-
+  		} else {
   		}
-  	}else{
-
-  	}
+  	} else if (string(argv[i]) == "-cws") {
+        if(i + 9 < argc){
+          cw_shade = true;
+          float x, y, z, rc, gc, bc, rw, gw, bw;
+          x = atof(argv[i + 1]);
+          y = atof(argv[i + 2]);
+          z = atof(argv[i + 3]);
+          rc = atof(argv[i + 4]);
+          gc = atof(argv[i + 5]);
+          bc = atof(argv[i + 6]);
+          rw = atof(argv[i + 7]);
+          gw = atof(argv[i + 8]);
+          bw = atof(argv[i + 9]);
+          cool_color = new ThreeDVector(rc, gc, bc);
+          warm_color = new ThreeDVector(rw, gw, bw);
+          cw_direction = new ThreeDVector(x, y, z);
+          cw_direction->normalize();
+          cw_direction->scalar_multiply(-1);
+          i = i + 9;
+        } else {
+        }
+  	} else if (string(argv[i]) == "-tn") {
+      toon_shade = true;
+    }
   }
 
   // Initalize theviewport size
