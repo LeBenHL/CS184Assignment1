@@ -69,6 +69,10 @@ static bool toon_shade = false;
 static bool save = false;
 static const char* file_name;
 
+static bool animation = false;
+static float angular_speed;
+static DirectionalLight* anim_light;
+
 //****************************************************
 // Simple init function
 //****************************************************
@@ -299,7 +303,6 @@ void circle(Sphere* sphere) {
 // function that does the actual drawing of stuff
 //***************************************************
 void myDisplay() {
-
   glClear(GL_COLOR_BUFFER_BIT);				// clear the color buffer
 
   glMatrixMode(GL_MODELVIEW);			        // indicate we are specifying camera transformations
@@ -333,6 +336,20 @@ void myDisplay() {
         exit(0);
     }
 
+   if (animation) {
+    float old_x, old_z, x, z;
+    float delta = angular_speed / 25.0;
+    old_x = anim_light->direction->x;
+    old_z = anim_light->direction->z;
+    x = old_x*cos((delta*2*PI)/180) - old_z*sin((delta*2*PI)/180);
+    z = old_x*sin((delta*2*PI)/180) + old_z*cos((delta*2*PI)/180);
+    anim_light->direction->x = x;
+    anim_light->direction->z = z;
+
+    // 25 frames per second
+    usleep(40 * 1000);
+  }
+
   glFlush();
   glutSwapBuffers();					// swap buffers (we earlier set double buffer)
 }
@@ -342,6 +359,14 @@ void myKeyboardFunc(unsigned char key, int x, int y){
 	if(key == KEY_SPC){
 		exit(0);
 	}
+}
+
+void myFrameMove() {
+    //nothing here for now
+  #ifdef _WIN32
+    Sleep(10);                                   //give ~10ms back to OS (so as not to waste the CPU)
+  #endif
+    glutPostRedisplay(); // forces glut to call the display function (myDisplay())
 }
 
 //****************************************************
@@ -447,6 +472,15 @@ int main(int argc, char *argv[]) {
         file_name = argv[i + 1];
         i = i + 1;
       }
+    } else if (string(argv[i]) == "-anim"){
+        if(i + 4 < argc){
+          animation = true;
+          angular_speed = atof(argv[i+1]);
+          anim_light = new DirectionalLight(0, 0, -1, atof(argv[i + 2]), atof(argv[i + 3]), atof(argv[i + 4]));
+          directional_lights.push_back(anim_light);
+          i = i + 4;
+        }
+
     }
   }
 
@@ -473,6 +507,7 @@ int main(int argc, char *argv[]) {
   glutDisplayFunc(myDisplay);				// function to run when its time to draw something
   glutReshapeFunc(myReshape);				// function to run when the window gets resized
   glutKeyboardFunc(myKeyboardFunc);
+  glutIdleFunc(myFrameMove);
   glutMainLoop();							// infinite loop that will keep drawing and resizing
   // and whatever else
 
