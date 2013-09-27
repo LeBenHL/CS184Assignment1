@@ -9,7 +9,7 @@ ifeq ($(shell sw_vers 2>/dev/null | grep Mac | awk '{ print $$2}'),Mac)
 else
 	CFLAGS = -g -DGL_GLEXT_PROTOTYPES -Iglut-3.7.6-bin
 	LDFLAGS = -lglut -lGLU
-	ARCH = -march=x86-64
+	ARCH = 
 endif
 	
 RM = /bin/rm -f 
