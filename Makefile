@@ -1,5 +1,7 @@
-OBJS = example_01.o sphere.o point_light.o directional_light.o three_d_vector.o libSOIL.a
+OBJS = example_01.o sphere.o point_light.o directional_light.o three_d_vector.o libSOIL.dylib
 CC = g++
+SOILCFLAGS = -c -O2 -Wall
+SOILLDFLAGS = -framework OpenGL -framework CoreFoundation
 ifeq ($(shell sw_vers 2>/dev/null | grep Mac | awk '{ print $$2}'),Mac)
 	CFLAGS = -g -DGL_GLEXT_PROTOTYPES -I./include/ -I/usr/X11/include -DOSX
 	LDFLAGS = -framework GLUT -framework OpenGL -framework CoreFoundation\
@@ -24,8 +26,19 @@ directional_light.o: directional_light.h directional_light.cpp light.h three_d_v
 	$(CC) $(CFLAGS) -c directional_light.cpp -o directional_light.o
 three_d_vector.o: three_d_vector.h three_d_vector.cpp
 	$(CC) $(CFLAGS) -c three_d_vector.cpp -o three_d_vector.o
+libSOIL.dylib: image_DXT.o image_helper.o SOIL.o stb_image_aug.o
+	gcc $(CFLAGS) -arch x86_64 -dynamiclib -o libSOIL.dylib image_DXT.o image_helper.o SOIL.o stb_image_aug.o -framework OpenGL -framework CoreFoundation
+image_DXT.o:
+	gcc $(SOILCFLAGS) $(SOILLDFLAGS) -arch x86_64 -c image_DXT.c -o image_DXT.o
+image_helper.o:
+	gcc $(SOILCFLAGS) $(SOILLDFLAGS) -arch x86_64 -c image_helper.c -o image_helper.o
+SOIL.o:
+	gcc $(SOILCFLAGS) $(SOILLDFLAGS) -arch x86_64 -c SOIL.c -o SOIL.o 
+stb_image_aug.o:
+	gcc $(SOILCFLAGS) $(SOILLDFLAGS) -arch x86_64 -c stb_image_aug.c -o stb_image_aug.o 
+
 clean: 
-	$(RM) *.o as1
+	$(RM) *.o as1 *.dylib
  
 
 
