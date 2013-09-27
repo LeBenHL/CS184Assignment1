@@ -2,7 +2,7 @@ Names: Ben Le (cs184-bn), Lichen Han (cs184-av)
 
 Platform: Mac OS X
 
-Location: cs184-av
+Location: cs184-av, Mac OS X
 
 Extra Credit Features
 
