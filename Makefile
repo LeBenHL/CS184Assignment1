@@ -27,7 +27,7 @@ directional_light.o: directional_light.h directional_light.cpp light.h three_d_v
 three_d_vector.o: three_d_vector.h three_d_vector.cpp
 	$(CC) $(CFLAGS) -c three_d_vector.cpp -o three_d_vector.o
 libSOIL.dylib: image_DXT.o image_helper.o SOIL.o stb_image_aug.o
-	gcc $(CFLAGS) $(ARCH) -dynamiclib -o libSOIL.dylib image_DXT.o image_helper.o SOIL.o stb_image_aug.o -framework OpenGL -framework CoreFoundation
+	gcc $(CFLAGS) $(LDFLAGS) $(ARCH) -dynamiclib -o libSOIL.dylib image_DXT.o image_helper.o SOIL.o stb_image_aug.o
 image_DXT.o:
 	gcc $(CFLAGS) $(ARCH) -c image_DXT.c -o image_DXT.o
 image_helper.o:
